@@ -4,12 +4,10 @@ ROOT_DIR = environ.Path(__file__) - 3  # (theta/config/settings/base.py - 3 = th
 APPS_DIR = ROOT_DIR.path('theta')
 
 env = environ.Env()
-
+env.read_env()
 READ_DOT_ENV_FILE = env.bool('DJANGO_READ_DOT_ENV_FILE', default=False)
 if READ_DOT_ENV_FILE:
     env.read_env(str(ROOT_DIR.path('.env')))
-else:
-    env.read_env()
 
 # GENERAL
 # ------------------------------------------------------------------------------
