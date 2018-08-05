@@ -1,0 +1,111 @@
+{% extends "base.html" %} {% load static %} {% block content %}
+  <div class="container">
+    <form>
+      <div class="col-6" style="text-align: center; margin-top: 30px; margin-bottom: 20px;"><h2>Add cartridge Item</h2>
+      </div>
+      <div class="row">
+        <div class="col-3">
+          <label for="cartridgeName">Cartridge Model:</label>
+          <input class="form-control" list="cartridges" id="cartridgeName" name="cartridgeName"/>
+          <datalist id="cartridges">
+            {% for cartridge in cartridges %}
+              <option value="{{ cartridge.name }}"></option>
+            {% endfor %}
+          </datalist>
+          <small id="ModelHelp" class="form-text text-muted">Start typing the model name.</small>
+        </div>
+        <div class="col-3">
+          <label for="numberOfCartridges">How many:</label>
+          <input class="form-control" type="number" step="1" id="numberOfCartridges" name="numberOfCartridges"
+                 value="0">
+          <small id="NumberHelp" class="form-text text-muted" value="0">The integer number. Can be negative.</small>
+
+        </div>
+        <button type="submit" class="btn btn-outline-success" id="addCartridgeBtn">Add</button>
+      </div>
+    </form>
+    <div class="inStock"><h1>In Stock: <span id="inStockValue" class="badge badge-secondary">0</span></h1></div>
+    <div data-alerts="alerts" data-titles='{"success": "<em>OK!</em>", "error": "<em>Error!</em>"}' data-ids="myid"
+         data-fade="3000">
+    </div>
+    <div id="history">
+      <table class="table">
+        <thead>
+        <tr>
+          <th scope="col-1">Date</th>
+          <th scope="col">User</th>
+          <th scope="col">Model</th>
+          <th scope="col">action</th>
+          <th scope="col">In stock</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for item in history %}
+          <tr
+            class="{% if item.action == 'delivery' %}bg-warning{% elif item.action == 'income' %}bg-success{% else %}bg-danger{% endif %}">
+            <td>{{ item.datetime|date:"d/m G-i" }}</td>
+            <td>{{ item.user }}</td>
+            <td>{{ item.cartridge_item }}</td>
+            <td><h3>
+                <span class="badge">
+                  {{ item.action }} <span class="badge badge-light">{{ item.message_as_list.0 }}</span>
+                </span></h3>
+            </td>
+            <td>
+              <h2>
+                <span class="badge badge-light">{{ item.message_as_list.1 }}</span>
+              </h2>
+            </td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+{% endblock %} {% block js %}
+  <script>
+    $(document).ready(function () {
+      $(".inStock").hide();
+      $("#cartridgeName").focus();
+      $("#cartridgeName").on('input', function () {
+        var val = this.value;
+        if ($('#cartridges option').filter(function () {
+          $(".inStock").hide();
+          $("#inStockValue").text("None")
+          return this.value === val;
+        }).length) {
+          $.ajax({
+            type: "POST",
+            url: request_path,
+            data: {
+              cartridgeName: val,
+            },
+            dataType: "json",
+            success: function (data) {
+              var json = JSON.parse(JSON.stringify(data));
+              if (typeof json.inStock !== 'undefined') {
+                $(".inStock").show();
+                $("#inStockValue").text(json.inStock)
+              }
+            },
+          });
+        }
+      });
+    })
+  </script>
+{% endblock js %} {% block css %}
+  <style>
+    #addCartridgeBtn {
+      margin-top: 9px;
+    }
+
+    .inStock {
+      margin-top: 20px;
+    }
+
+    #history {
+      margin-top: 30px;
+    }
+  </style>
+{% endblock css %}

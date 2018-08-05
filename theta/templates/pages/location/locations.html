@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% load static %}
+{% block css %}
+{% endblock css %}
+{% block js %}
+<script src="{% static "js/bootstrap-treeview.min.js" %}"></script>
+<script type="text/javascript">
+$(function() {
+        var options = {
+          enableLinks: true,
+          data: {{tree_view|safe}}
+        };
+  			$('#tree').treeview(options);
+  		});
+
+</script>
+{% endblock js %}
+{% block content %}
+<div class="row">
+  <div class="col">
+    <div id="tree" class="treeview">
+
+    </div>
+  </div>
+
+</div>
+{% endblock content %}

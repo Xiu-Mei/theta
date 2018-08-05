@@ -1,0 +1,38 @@
+{% extends "base_min.html" %}
+{% load static %}
+{% block css %}
+    <link rel="stylesheet" href="{% static "css/bootstrap4_toggle.css"%}"/>
+    <link rel="stylesheet" href="http://jqueryui.com/jquery-wp-content/themes/jquery/css/base.css?v=1">
+    <link href="https://gitcdn.github.io/bootstrap-toggle/2.2.2/css/bootstrap-toggle.min.css" rel="stylesheet">
+    <link href="{% static 'css/location/floor.css' %}" rel="stylesheet">
+{% endblock css %}
+{% block js %}
+    <script src="//code.jquery.com/ui/1.10.4/jquery-ui.js"></script>
+    <script src="https://gitcdn.github.io/bootstrap-toggle/2.2.2/js/bootstrap-toggle.min.js"></script>
+    <script src="{% static "js/location/floor.js" %}"></script>
+{% endblock js %}
+{% block content %}
+        <div class="header">
+            <div class="input-group mb-3 former" id="input_group">
+                <input type="checkbox" data-toggle="toggle" data-on="Edit" data-off="Freeze" data-onstyle="success"
+                       id="edit_toggle">
+                <div class="input-group-prepend">
+                    <button type="button" class="btn btn-secondary hidable" id="add_place">add place</button>
+                </div>
+                <input type="text" class="form-control hidable" size="30" placeholder="Places' name"
+                       aria-label="Places' name" name="place_input">
+                <div class="input-group-append">
+                    <button class="btn btn-outline-primary hidable" id="save_place_name" type="button">Save</button>
+                    <button class="btn btn-outline-danger hidable" id="delete_place" type="button">Delete</button>
+                </div>
+            </div>
+        </div>
+        <div id="parent">
+            <img src="{{MEDIA_URL}}{{floor.plan}}" alt="" id="plane_img" style="max-width: none;">
+          {% for place in places %}
+          <div class="place" id="{{place.id}}" style="position: absolute; left: {{place.left}}px; top: {{place.top}}px;">
+                <span>{{place.name}}</span>
+            </div>
+          {% endfor %}
+        </div>
+{% endblock content %}
