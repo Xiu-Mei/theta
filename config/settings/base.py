@@ -1,6 +1,7 @@
 import environ
 
-ROOT_DIR = environ.Path(__file__) - 3  # (theta/config/settings/base.py - 3 = theta/)
+SETTINGS_DIR = environ.Path(__file__)
+ROOT_DIR = SETTINGS_DIR - 3  # (theta/config/settings/base.py - 3 = theta/)
 APPS_DIR = ROOT_DIR.path('theta')
 
 env = environ.Env()
@@ -8,6 +9,8 @@ env = environ.Env()
 READ_DOT_ENV_FILE = env.bool('DJANGO_READ_DOT_ENV_FILE', default=False)
 if READ_DOT_ENV_FILE:
     env.read_env(str(ROOT_DIR.path('.env')))
+else:
+    env.read_env()
 
 # GENERAL
 # ------------------------------------------------------------------------------
@@ -23,9 +26,8 @@ USE_TZ = True
 # ------------------------------------------------------------------------------
 
 DATABASES = {
-    'default': env.db('DATABASE_URL', default='postgres:///theta'),
+    'default': env.db('DATABASE_URL'),
 }
-# DATABASES['default']['ATOMIC_REQUESTS'] = True // todo delete it
 
 # URLS
 # ------------------------------------------------------------------------------
@@ -179,10 +181,10 @@ MANAGERS = ADMINS
 
 # django-allauth
 # ------------------------------------------------------------------------------
-# ACCOUNT_ALLOW_REGISTRATION = False
-# ACCOUNT_AUTHENTICATION_METHOD = 'username'
-# ACCOUNT_EMAIL_REQUIRED = False
-# ACCOUNT_EMAIL_VERIFICATION = 'none'
-# ACCOUNT_ADAPTER = 'theta.users.adapters.AccountAdapter'
-# SOCIALACCOUNT_ADAPTER = 'theta.users.adapters.SocialAccountAdapter'
+ACCOUNT_ALLOW_REGISTRATION = False
+ACCOUNT_AUTHENTICATION_METHOD = 'username'
+ACCOUNT_EMAIL_REQUIRED = False
+ACCOUNT_EMAIL_VERIFICATION = 'none'
+ACCOUNT_ADAPTER = 'theta.users.adapters.AccountAdapter'
+SOCIALACCOUNT_ADAPTER = 'theta.users.adapters.SocialAccountAdapter'
 
