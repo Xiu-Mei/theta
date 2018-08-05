@@ -1,7 +1,6 @@
 import environ
 
-SETTINGS_DIR = environ.Path(__file__)
-ROOT_DIR = SETTINGS_DIR - 3  # (theta/config/settings/base.py - 3 = theta/)
+ROOT_DIR = environ.Path(__file__) - 3  # (theta/config/settings/base.py - 3 = theta/)
 APPS_DIR = ROOT_DIR.path('theta')
 
 env = environ.Env()
