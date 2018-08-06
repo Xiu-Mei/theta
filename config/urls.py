@@ -18,9 +18,8 @@ urlpatterns = [
     url(r'^users/', include('theta.users.urls', namespace='users')),
     url(r'^accounts/', include('allauth.urls')),
     url(r'^printers/', include('printers.urls')),
-                  url(r'^location/', include('location.urls')),
-                  url(r'^printer_spares/', include('printer_spares.urls')),
-
+    url(r'^location/', include('location.urls')),
+    url(r'^printer_spares/', include('printer_spares.urls')),
               ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 if settings.DEBUG:
