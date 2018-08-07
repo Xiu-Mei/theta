@@ -335,4 +335,4 @@ tags
 pyvenv.cfg
 pip-selfcheck.json
 
-
+trash/*

@@ -66,9 +66,9 @@ class AddCartridgeTemplateView(OfficeAdminValidationMixin, TemplateView):
             cartridge=cartridge,
             office=self.office,
         )
-        cartridge_item.in_stock += get_params['number_of_cartridges']
         if created:
             self.cartridge_item_history_create([cartridge_item, 'create', 'The first creation of printer item.'])
+        cartridge_item.in_stock += get_params['number_of_cartridges']
         if cartridge_item.in_stock < 0:
             cartridge_item.in_stock = 0
         cartridge_item.save()

@@ -26,7 +26,7 @@ class CartridgeItemHistory(models.Model):
     cartridge_item = models.ForeignKey(CartridgeItem, on_delete=models.CASCADE)
     datetime = models.DateTimeField(auto_now_add=True, blank=True)
     action = models.CharField(max_length=32, choices=ACTION_CHOICES, default='create')
-    message = models.CharField(max_length=32, blank=True)
+    message = models.CharField(max_length=512, blank=True)
 
     def message_as_list(self):
         return self.message.split(' ')
