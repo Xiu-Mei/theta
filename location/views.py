@@ -2,29 +2,29 @@ import json
 
 from django.views.generic import TemplateView
 from django.shortcuts import redirect
-from django.http import HttpResponse, JsonResponse
+from django.http import JsonResponse
 
 from theta.users.validation import OfficeAdminValidationMixin
-from location.models import Building, Floor, Place, Room
-from utility.validation import text_validator
+from location.models import Building, Floor, Place
+from utility.validation import validation
 
 
 class LocationTemplateView(OfficeAdminValidationMixin, TemplateView):
     template_name = 'pages/location/locations.html'
 
     def __init__(self):
-        self.office = None
-        self.redirect = None
+        super(LocationTemplateView, self).__init__()
+        self.context = dict()
 
     def get(self, request, *args, **kwargs):
-        self.is_office_admin()
-        if self.redirect:
-            redirect(self.redirect)
-        context = self.get_context_data()
-        return self.render_to_response(context)
+        if self.is_office_admin() is False:
+            return redirect('account_login')
+
+        self.get_context_data()
+        return self.render_to_response(self.context)
 
     def get_context_data(self, **kwargs):
-        context = super(LocationTemplateView, self).get_context_data(**kwargs)
+        self.context.update(super(LocationTemplateView, self).get_context_data(**kwargs))
         tree_view = list()
         buildings = Building.objects.filter(office=self.office).values_list(
             'id', 'name').order_by('name')
@@ -49,92 +49,120 @@ class LocationTemplateView(OfficeAdminValidationMixin, TemplateView):
                 #     floor_dict['nodes'].append(room_dict)
                 building_dict['nodes'].append(floor_dict)
             tree_view.append(building_dict)
-        context['tree_view'] = json.dumps(tree_view)
-        context['menu'] = 'location'
-        return context
+        self.context['tree_view'] = json.dumps(tree_view)
+        self.context['menu'] = 'location'
 
 
 class FloorTemplateView(OfficeAdminValidationMixin, TemplateView):
     template_name = 'pages/location/floor.html'
 
     def __init__(self):
-        self.office = None
-        self.floor_id = None
-        self.building_id = None
-        self.redirect = None
-        self.floor = None
+        super(FloorTemplateView, self).__init__()
+        self.params = dict()
+        self.context = dict()
+        self.post_params = dict()
+        self.validation_params = dict()
 
-    def get(self, request, *args, **kwargs):
-        self.is_office_admin()
-        self.validate_location()
-        if self.redirect:
-            return redirect(self.redirect)
-        context = self.get_context_data()
-        return self.render_to_response(context)
+    def get(self, request, **kwargs):
+        if self.is_office_admin() is False:
+            return redirect('account_login')
+
+        self.params['building_id'] = kwargs['building_id']
+        self.params['floor_id'] = kwargs['floor_id']
+        if self.get_floor() is False:
+            return redirect('location')
+
+        self.get_context_data()
+        return self.render_to_response(self.context)
 
     def get_context_data(self, **kwargs):
-        context = super(FloorTemplateView, self).get_context_data(**kwargs)
-        context['menu'] = 'location'
-        context['floor'] = self.floor
-        context['places'] = Place.objects.filter(floor=self.floor_id)
-        return context
+        self.context.update(super(FloorTemplateView, self).get_context_data(**kwargs))
+        self.context['menu'] = 'location'
+        self.context['floor'] = self.params['floor']
+        self.context['places'] = Place.objects.filter(floor=self.params['floor_id'])
 
-    def post(self, request, *args, **kwargs):
-        self.is_office_admin()
-        self.validate_location()
-        if self.redirect:
-            return redirect(self.redirect)
+    def post(self, request, **kwargs):
+        if self.is_office_admin() is False:
+            return redirect('account_login')
+
+        self.params['building_id'] = kwargs['building_id']
+        self.params['floor_id'] = kwargs['floor_id']
+        if self.get_floor() is False:
+            return redirect('location')
+
+        self.post_params['place_id'] = self.request.POST.get('id')
+        self.validation_params['place_id'] = {
+            'symbol_set': 'int',
+        }
+        self.post_params['left'] = self.request.POST.get('left')
+        if self.post_params['left'].endswith('px'):
+            self.post_params['left'] = self.post_params['left'][:-2]
+        self.validation_params['left'] = {
+            'symbol_set': 'int',
+            'required': True,
+        }
+        self.post_params['top'] = self.request.POST.get('top')
+        if self.post_params['top'].endswith('px'):
+            self.post_params['top'] = self.post_params['top'][:-2]
+        self.validation_params['top'] = {
+            'symbol_set': 'int',
+            'required': True,
+        }
+        self.post_params['text'] = self.request.POST.get('text')
+        self.validation_params['text'] = {
+            'symbol_set': 'd, en, ru',
+            'allowed': '_-',
+            'return_sentence': True,
+        }
+        self.post_params['action'] = self.request.POST.get('action')
+        self.validation_params['action'] = {
+            'symbol_set': 'en_sm',
+            'allowed_values': ('save', 'delete', ),
+            'required': True,
+        }
         if request.is_ajax():
-            post_params = self.validate_post_params()
-            if post_params:
-                print('id={}, left={}, top={}, text={}, action={}'.format(*post_params))
-                return JsonResponse(self.change_place(*post_params))
+            if validation(self.post_params, self.validation_params) is False:
+                return JsonResponse({'error': self.post_params['error']})
+
+            self.change_place()
+            print(self.context['id'])
+            return JsonResponse(self.context)
         else:
             return redirect('location')
 
-    def change_place(self, place_id, left, top, text, action):
-        if action == 'save':
-            if place_id:
-                place = Place.objects.filter(floor_id=self.floor_id, id=place_id).update(left=left, top=top, name=text)
+    def change_place(self):
+        if self.post_params['action'] == 'save':
+            if self.post_params['place_id']:
+                place = Place.objects.filter(floor_id=self.params['floor'], id=self.post_params['place_id']).\
+                    update(
+                    left=self.post_params['left'],
+                    top=self.post_params['top'],
+                    name=self.post_params['text']
+                )
+                self.context['id'] = self.post_params['place_id'] if place else 0
             else:
-                place = Place.objects.create(floor_id=self.floor_id, left=left, top=top, name=text)
-                place_id = place.id
+                place = Place.objects.create(
+                    floor_id=self.params['floor_id'],
+                    left=self.post_params['left'],
+                    top=self.post_params['top'],
+                    name=self.post_params['text']
+                )
+                self.context['id'] = place.id if place else 0
 
-            if place_id and place:
-                response = {'id': place_id}
-            else:
-                response = {'id': 0}
-            return response
-        elif action == 'delete':
-            Place.objects.filter(floor_id=self.floor_id, id=place_id).delete()
-            return {'id': 0}
-        return {}
+        elif self.post_params['action'] == 'delete':
+            Place.objects.filter(floor_id=self.params['floor'], id=self.post_params['place_id']).delete()
+            self.context['id'] = 0
 
-    def validate_post_params(self):
-        try:
-            place_id = int(self.request.POST['id']) if 'id' in self.request.POST.keys() else 0
-            left = int(self.request.POST['left'].split('px')[0])
-            top = int(self.request.POST['top'].split('px')[0])
-            text = text_validator(self.request.POST['text'], 'd, en, ru', allowed='_-', remove_tags=True,
-                                  return_sentence=True)
-            action = text_validator(self.request.POST['action'], 'en', remove_tags=True)
-        except (KeyError, ValueError):
-            return {}
-
-        return [place_id, left, top, text, action]
-
-    def validate_location(self):
-        self.floor_id = self.kwargs['floor_id']
-        self.building_id = self.kwargs['building_id']
+    def get_floor(self):
         try:
             Building.objects.get(
                 office=self.office,
-                id=self.building_id,
+                id=self.params['building_id'],
             )
-            self.floor = Floor.objects.get(
-                building=self.building_id,
-                id=self.floor_id,
+            self.params['floor'] = Floor.objects.get(
+                building=self.params['building_id'],
+                id=self.params['floor_id'],
             )
         except (Building.DoesNotExist, Floor.DoesNotExist):
-            self.redirect = 'location'
-            return
+            self.params['error'] = 'Building or Floor doesn\'t  exitst'
+            return False

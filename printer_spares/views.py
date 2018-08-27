@@ -3,7 +3,7 @@ from django.shortcuts import redirect
 from django.http import JsonResponse
 
 from theta.users.validation import OfficeAdminValidationMixin
-from utility.validation import text_validator
+from utility.validation import validation
 from printer_spares.models import Cartridge, CartridgeItem
 from history.models import CartridgeItemHistory
 
@@ -13,74 +13,74 @@ class AddCartridgeTemplateView(OfficeAdminValidationMixin, TemplateView):
 
     def __init__(self):
         super(AddCartridgeTemplateView, self).__init__()
-        self.office = None
-        self.redirect = None
+        self.get_params = dict()
+        self.validation_params = dict()
+        self.post_params = dict()
+        self.context = dict()
+        self.params = dict()
 
     def get(self, request, *args, **kwargs):
-        self.is_office_admin()
-        if self.redirect:
-            redirect(self.redirect)
-        get_params = dict()
-        get_params['cartridge_name'] = self.request.GET.get('cartridgeName', '')
-        get_params['number_of_cartridges'] = self.request.GET.get('numberOfCartridges', '')
-        context = self.get_context_data()
-        if self.validate_get_params(get_params):
-            self.add_cartridge_item(get_params)
-            return redirect('add_cartridge')
-        return self.render_to_response(context)
+        if self.is_office_admin() is False:
+            return redirect('account_login')
+
+        self.get_params['cartridge_name'] = self.request.GET.get('cartridgeName')
+        self.validation_params['cartridge_name'] = {
+            'symbol_set': 'en, ru, d',
+            'allowed': '/|()-_',
+            'return_sentence': True,
+            'required': True,
+        }
+        self.get_params['number_of_cartridges'] = self.request.GET.get('numberOfCartridges')
+        self.validation_params['number_of_cartridges'] = {
+            'symbol_set': 'int',
+            'required': True,
+        }
+        if validation(self.get_params, self.validation_params) is False:
+            redirect('add_cartridge')
+
+        self.get_context_data()
+
+        if self.add_cartridge_item() is False:
+            redirect('add_cartridge')
+
+        return self.render_to_response(self.context)
 
     def get_context_data(self, **kwargs):
-        context = super(AddCartridgeTemplateView, self).get_context_data(**kwargs)
-        context['cartridges'] = Cartridge.objects.all()
-        context['history'] = CartridgeItemHistory.objects.filter(
+        self.context.update(super(AddCartridgeTemplateView, self).get_context_data(**kwargs))
+        self.context['cartridges'] = Cartridge.objects.all()
+        self.context['history'] = CartridgeItemHistory.objects.filter(
             action__in=['income', 'consumption', 'delivery']
         ).order_by('-id')[:10]
-        context['menu'] = 'storage'
-        return context
+        self.context['menu'] = 'storage'
 
-    @staticmethod
-    def validate_get_params(get_params):
-        if not get_params['cartridge_name'] or not get_params['number_of_cartridges']:
-            return None
+    def add_cartridge_item(self):
+        if self.get_params['number_of_cartridges'] == 0:
+            self.params['error'] = 'Number of cartridges is zero'
+            return False
         try:
-            get_params['cartridge_name'] = text_validator(
-                get_params['cartridge_name'],
-                'en, ru, d',
-                remove_tags=True,
-                allowed='/|()-_',
-                return_sentence=True,
-            )
-            get_params['number_of_cartridges'] = int(get_params['number_of_cartridges'])
-            if get_params['number_of_cartridges'] == 0:
-                raise ValueError
-        except ValueError:
-            return None
-        return True
-
-    def add_cartridge_item(self, get_params):
-        try:
-            cartridge = Cartridge.objects.get(name=get_params['cartridge_name'])
+            cartridge = Cartridge.objects.get(name=self.get_params['cartridge_name'])
         except Cartridge.DoesNotExist:
-            return
+            self.params['error'] = 'Cartridge doesn\'t exist'
+            return False
         cartridge_item, created = CartridgeItem.objects.get_or_create(
             cartridge=cartridge,
             office=self.office,
         )
         if created:
-            self.cartridge_item_history_create([cartridge_item, 'create', 'The first creation of printer item.'])
-        cartridge_item.in_stock += get_params['number_of_cartridges']
+            self.create_cartridge_item_history([cartridge_item, 'create', 'The first creation of printer item.'])
+        cartridge_item.in_stock += self.get_params['number_of_cartridges']
         if cartridge_item.in_stock < 0:
             cartridge_item.in_stock = 0
         cartridge_item.save()
 
-        action = 'income' if get_params['number_of_cartridges'] > 0 else 'consumption'
+        action = 'income' if self.get_params['number_of_cartridges'] > 0 else 'consumption'
         message = '{} {}'.format(
-            get_params['number_of_cartridges'],
+            self.get_params['number_of_cartridges'],
             cartridge_item.in_stock,
         )
-        self.cartridge_item_history_create([cartridge_item, action, message])
+        self.create_cartridge_item_history([cartridge_item, action, message])
 
-    def cartridge_item_history_create(self, params):
+    def create_cartridge_item_history(self, params):
         """
         :param params: [cartridge_item, action, message]
         :return: True or False
@@ -93,38 +93,36 @@ class AddCartridgeTemplateView(OfficeAdminValidationMixin, TemplateView):
             message=params[2],
         )
 
-    def post(self, request, *args, **kwargs):
-        self.is_office_admin()
-        if self.redirect:
-            return redirect(self.redirect)
+    def post(self, request):
+        if self.is_office_admin() is False:
+            return redirect('account_login')
+
         if request.is_ajax():
-            ajax_params = self.validate_ajax_params()
-            if 'error' not in ajax_params.keys():
-                return JsonResponse(self.get_ajax_response(**ajax_params))
-            else:
-                return JsonResponse({'error': ajax_params['error']})
+            self.post_params['cartridge_name'] = self.request.POST.get('cartridgeName')
+            self.validation_params['cartridge_name'] = {
+                'symbol_set': 'en, ru, d',
+                'allowed': '/|()-_',
+                'return_sentence': True,
+                'required': True,
+            }
+            if validation(self.get_params, self.validation_params) is False:
+                JsonResponse(self.post_params['error'])
+
+            if self.get_post_context() is False:
+                return JsonResponse({'error': self.post_params['error']})
+            return JsonResponse(self.context)
         else:
             return redirect('add_cartridge')
 
-    def validate_ajax_params(self):
-        try:
-            cartridge_name = text_validator(
-                self.request.POST['cartridgeName'],
-                'en, ru, d',
-                remove_tags=True,
-                allowed='/|()-_',
-                return_sentence=True,
-            )
-        except ValueError:
-            return {'error': 'Wrong cartridge name'}
-        return {'cartridge_name': cartridge_name}
-
-    def get_ajax_response(self, **params):
+    def get_post_context(self):
         try:
             cartridge_item = CartridgeItem.objects.get(
-                cartridge__name=params['cartridge_name'],
+                cartridge__name=self.post_params['cartridge_name'],
                 office=self.office,
             )
         except CartridgeItem.DoesNotExist:
-            return {'inStock': 'None'}
-        return {'inStock': cartridge_item.in_stock}
+            self.context['inStock'] = 'None'
+            return True
+        self.context['inStock'] = cartridge_item.in_stock
+        return True
+

@@ -19,4 +19,14 @@ class PrinterForm(forms.ModelForm):
 
     class Meta:
         model = Printer
-        fields = ['manufacturer', 'name', 'image', 'usb', 'ethernet', 'wireless', 'duplex', 'color', 'type', 'comment']
+        fields = ['manufacturer',
+                  'name',
+                  'image',
+                  'usb',
+                  'ethernet',
+                  'wireless',
+                  'duplex',
+                  'color',
+                  'type',
+                  'comment',
+                  ]

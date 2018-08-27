@@ -1,235 +1,509 @@
 {% extends "base.html" %} {% load static %} {% load template_filters %} {% block content %}
-<div class="container w-100">
-  <div class="row justify-content-center">
-    <div class="col col-md-4 p-3">
-      <img style="object-fit: cover;" class="figure-img img-fluid rounded" src="{{ MEDIA_URL}}{{ printer.image }}"
-           alt="Printer Image">
-    </div>
-    <div class="col col-md-4 p-3">
-      {% if printer.type == 'laser' %}
-      <div class="alert alert-secondary" role="alert">
-        Laser printer: {{printer.manufacturer}} {{ printer.name }}
-      </div>
-      {% else %}
-      <div class="alert alert-info" role="alert">
-        Ink printer: {{printer.manufacturer}} {{ printer.name }}
-      </div>
-      {% endif %} {% if printer.mfp %}
-      <h4><span class="badge badge-success">MFP</span></h4> {% endif %} {% if printer.usb %}
-      <h4><span class="badge badge-secondary">usb</span></h4> {% endif %} {% if printer.ethernet %}
-      <h4><span class="badge badge-secondary">ethernet</span></h4> {% endif %} {% if printer.wireless %}
-      <h4><span class="badge badge-secondary">wireless</span></h4> {% endif %} {% if printer.duplex %}
-      <h4><span class="badge badge-dark">duplex</span></h4> {% endif %} {% if printer.color %}
-      <h4><span class="badge badge-warning">color</span></h4> {% endif %} {% if printer.comment %}
-      <div class="card-body">
-        printer.comment
-      </div>
-      {% endif %}
-
-    </div>
-    <div class="col col-md-4 p-3">
-      <div id="accordion">
-        <div class="card">
-          <div class="card-header" id="headingOne">
-            <h5 class="mb-0">
-              <div class="btn-group" role="group" aria-label="printer items">
-                <button class="btn btn-secondary collapsed" data-toggle="collapse" data-target="#collapseOne"
-                        aria-expanded="true" aria-controls="collapseOne">
-                  Printer Items <span class="badge badge-light">{{ printer_items|length }}</span>
-                </button>
-                <button type="button" class="btn btn-success" id="btn_addprinter">&#65291;</button>
-              </div>
-              </h5>
-          </div>
-
-          <div id="collapseOne" class="collapse" aria-labelledby="headingOne" data-parent="#accordion">
-            <div class="card-body">
-              {% for printer_item in printer_items %}
-                <a class="btn btn-outline-secondary" href="printer_item/{{ printer_item.inventory_number }}">
-                  {{ printer_item.inventory_number }}
-                </a> {% endfor %}
+    <div class="container w-100">
+        <div class="row justify-content-center">
+            <div class="col col-md-4 p-3">
+                <img style="object-fit: cover;" class="figure-img img-fluid rounded"
+                     src="{{ MEDIA_URL }}{{ printer.image }}"
+                     alt="Printer Image">
             </div>
-          </div>
-        </div>
-        <div class="card">
-          <div class="card-header" id="headingTwo">
-            <h5 class="mb-0">
-                <button class="btn btn-secondary" data-toggle="collapse" data-target="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">
-                  Cartridges
-                </button>
-              </h5>
-          </div>
-          <div id="collapseTwo" class="collapse show" aria-labelledby="headingTwo" data-parent="#accordion">
-            <div class="card-body">
-              {% for cartridge in cartridges %}
-              <div class="btn-group" role="group">
-                <a class="btn btn-outline-secondary" href="spares/cartridge/{{ cartridge.name }}" data-toggle="tooltip"
-                   data-placement="left" title="{{ cartridge.name }}"><img
-                    style="margin-top:4px; height:32px;" class="rounded mx-auto d-block"
-                    src="{{ MEDIA_URL}}/images/printers/{% if cartridge.color %}{{ cartridge.color }}{% else %}black{% endif %}.png"></a>
-                <span class="btn btn-dark"><h3 style="margin-top:3px;">{% if cartridge_items|get_item:cartridge.name %}{{ cartridge_items|get_item:cartridge.name }}{%else%}0{%endif%}</h3></span>
-                <a class="btn btn-dark" href="spares/cartridge/{{ cartridge.name }}/minus"><h3
-                    style="margin-top:3px;">&minus;</h3></a>
-              </div>
-              {% endfor %}
-            </div>
-          </div>
-        </div>
-        {% if printer.comment %}
-        <div class="card">
-          <div class="card-header" id="headingFour">
-            <h5 class="mb-0">
-                <button class="btn btn-secondary" data-toggle="collapse" data-target="#collapseFour" aria-expanded="false" aria-controls="collapseFour">
-                  Notes
-                </button>
-              </h5>
-          </div>
-          <div id="collapseFour" class="collapse" aria-labelledby="headingFour" data-parent="#accordion">
-            <div class="card-body">
-              {{ printer.comment }}
-            </div>
-          </div>
-        </div>
-        {% endif %}
-      </div>
-    </div>
-  </div>
-  <div class="col p-3">
-    <div id="accordion1">
-      <div class="card">
-        <div class="card-header" id="headingThree">
-          <h5 class="mb-0">
-              <button class="btn btn-secondary" data-toggle="collapse" data-target="#collapseThree" aria-expanded="true" aria-controls="collapseThree">
-                Printer Spares <span class="badge badge-light">{{ spares|length }}</span>
-              </button>
-            </h5>
-        </div>
-
-        <div id="collapseThree" class="collapse" aria-labelledby="headingOne" data-parent="#accordion">
-          <div class="card-body">
-            <div class="list-group" id="list-tab" role="tablist">
-              {% for spare in spares %}
-              <a class="list-group-item list-group-item-action p-0" id="list-profile-list" data-toggle="list"
-                 href="#list-profile" role="tab">
-                <div class="container">
-                  <div class="row">
-                    <div
-                      style="height:70px; background-image:url('{{ MEDIA_URL }}{{ spare.image }}'); background-size: 100px; "
-                      class="col-2">
+            <div class="col col-md-4 p-3">
+                {% if printer.type == 'laser' %}
+                    <div class="alert alert-secondary" role="alert">
+                        Laser printer: {{ printer.manufacturer }} {{ printer.name }}
                     </div>
-                    <div class="col-8">
-                      <div class="btn-group" role="group">
-                        {% for index in spare.indexes.all %}
-                        <h6><span class="badge badge-secondary">{{index}}</span></h6> {% endfor %}
-                      </div>
-                      <p>{{spare.kind_of_spare}}</p>
+                {% else %}
+                    <div class="alert alert-info" role="alert">
+                        Ink printer: {{ printer.manufacturer }} {{ printer.name }}
                     </div>
-                    <div class="col-2 bg-dark text-white rounded-right text-nowrap">
-                      <h1 style="margin-top:10px;" class="text-center font-weight-bold">
-                        {% if spare_items|get_item:spare.id %}
-                        {{ spare_items|get_item:spare.id }}{%else%}0{%endif%}</h1>
-                    </div>
-                  </div>
+                {% endif %} {% if printer.mfp %}
+                <h4><span class="badge badge-success">MFP</span></h4> {% endif %} {% if printer.usb %}
+                <h4><span class="badge badge-secondary">usb</span></h4> {% endif %} {% if printer.ethernet %}
+                <h4><span class="badge badge-secondary">ethernet</span></h4> {% endif %} {% if printer.wireless %}
+                <h4><span class="badge badge-secondary">wireless</span></h4> {% endif %} {% if printer.duplex %}
+                <h4><span class="badge badge-dark">duplex</span></h4> {% endif %} {% if printer.color %}
+                <h4><span class="badge badge-warning">color</span></h4> {% endif %} {% if printer.comment %}
+                <div class="card-body">
+                    printer.comment
                 </div>
-              </a>
-              {% endfor %}
+            {% endif %}
+
             </div>
-          </div>
+            <div class="col col-md-4 p-3">
+                <div id="accordion">
+                    <div class="card">
+                        <div class="card-header" id="headingOne">
+                            <h5 class="mb-0">
+                                <div class="btn-group" role="group" aria-label="printer items" id="printer_items">
+                                    <button class="btn btn-secondary collapsed" data-toggle="collapse"
+                                            data-target="#collapseOne"
+                                            aria-expanded="true" aria-controls="collapseOne">
+                                        Printer Items <span class="badge badge-light">{{ printer_items|length }}</span>
+                                    </button>
+                                    <button type="button" class="btn btn-success" id="btn_addprinter">&#65291;</button>
+                                </div>
+                            </h5>
+                        </div>
+
+                        <div id="collapseOne" class="collapse" aria-labelledby="headingOne" data-parent="#accordion">
+                            <div class="card-body">
+                                {% for printer_item in printer_items %}
+                                    <a class="btn btn-outline-secondary"
+                                       href="printer_item/{{ printer_item.inventory_number }}">
+                                        {{ printer_item.inventory_number }}
+                                    </a> {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-header" id="headingTwo">
+                            <h5 class="mb-0">
+                                <button class="btn btn-secondary" data-toggle="collapse" data-target="#collapseTwo"
+                                        aria-expanded="false" aria-controls="collapseTwo">
+                                    Cartridges
+                                </button>
+                            </h5>
+                        </div>
+                        <div id="collapseTwo" class="collapse show" aria-labelledby="headingTwo"
+                             data-parent="#accordion">
+                            <div class="card-body">
+                                {% for cartridge in cartridges %}
+                                    <div class="btn-group" role="group">
+                                        <a class="btn btn-outline-secondary"
+                                           href="spares/cartridge/{{ cartridge.name }}" data-toggle="tooltip"
+                                           data-placement="left" title="{{ cartridge.name }}"><img
+                                                style="margin-top:4px; height:32px;" class="rounded mx-auto d-block"
+                                                src="{{ MEDIA_URL }}/images/printers/{% if cartridge.color %}{{ cartridge.color }}{% else %}black{% endif %}.png"></a>
+                                        <span class="btn btn-dark"><h3
+                                                style="margin-top:3px;">{% if cartridge_items|get_item:cartridge.name %}
+                                            {{ cartridge_items|get_item:cartridge.name }}{% else %}
+                                            0{% endif %}</h3></span>
+                                        <a class="btn btn-dark" href="spares/cartridge/{{ cartridge.name }}/minus"><h3
+                                                style="margin-top:3px;">&minus;</h3></a>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                    {% if printer.comment %}
+                        <div class="card">
+                            <div class="card-header" id="headingFour">
+                                <h5 class="mb-0">
+                                    <button class="btn btn-secondary" data-toggle="collapse" data-target="#collapseFour"
+                                            aria-expanded="false" aria-controls="collapseFour">
+                                        Notes
+                                    </button>
+                                </h5>
+                            </div>
+                            <div id="collapseFour" class="collapse" aria-labelledby="headingFour"
+                                 data-parent="#accordion">
+                                <div class="card-body">
+                                    {{ printer.comment }}
+                                </div>
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
         </div>
-      </div>
+        <div class="col p-3">
+            <div id="accordion1">
+                <div class="card">
+                    <div class="card-header" id="headingThree">
+                        <h5 class="mb-0">
+                            <button class="btn btn-secondary" data-toggle="collapse" data-target="#collapseThree"
+                                    aria-expanded="true" aria-controls="collapseThree">
+                                Printer Spares <span class="badge badge-light">{{ spares|length }}</span>
+                            </button>
+                        </h5>
+                    </div>
+
+                    <div id="collapseThree" class="collapse" aria-labelledby="headingOne" data-parent="#accordion">
+                        <div class="card-body">
+                            <div class="list-group" id="list-tab" role="tablist">
+                                <div class="container">
+                                    {% for spare in spares %}
+                                        <div class="row brd">
+                                            <div
+                                                    style="height:70px;
+                                                            background-image:url('{{ MEDIA_URL }}{{ spare.image }}');
+                                                            background-size: 100px; "
+                                                    class="col-2">
+                                            </div>
+                                            <div class="col-7">
+                                                <div class="btn-group" role="group">
+                                                    {% for index in spare.indexes.all %}
+                                                        <h6><span class="badge badge-secondary">{{ index }}</span>
+                                                        </h6> {% endfor %}
+                                                </div>
+                                                <p>{{ spare.kind_of_spare }}</p>
+                                            </div>
+                                        <button style="border-radius: 0px" type="button" data-spareid="{{ spare.id }}" class="col-1  btn btn-success btn-lg btn-block btn_addspare"><h1>&#65291;</h1></button>
+                                            <div class="col-2 bg-dark text-white rounded-right text-nowrap">
+                                                <h1 style="margin-top:10px;" class="text-center font-weight-bold" data-sparevalue="{{ spare.id }}">
+                                                    {% if spare_items|get_item:spare.id %}
+                                                        {{ spare_items|get_item:spare.id }}{% else %}
+                                                        0{% endif %}</h1>
+                                            </div>
+                                        </div>
+                                {% endfor %}
+                                        </div>
+
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        <div data-alerts="alerts" data-titles='{"success": "<em>OK!</em>", "error": "<em>Error!</em>"}' data-ids="myid"
+             data-fade="3000"></div>
+        </div>
+    </div>
+    <div id="dialog_add_printer" title="Add printer">
+        <div class="input-group mb-1">
+            <span class="input-group-addon span-width">prefix mask</span>
+            <select class="custom-select" id="mask">
+                {% for pm in inv_prefix_masks %}
+                    <option {% if forloop.first %}selected{% endif %} value="{{ pm }}">{{ pm }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="input-group mb-1">
+            <span class="input-group-addon span-width">Inventory #</span>
+            <input type="text" class="form-control" id="inv_number">
+        </div>
+        <div class="input-group mb-1">
+            <div class="input-group-addon">
+                <span class="input-group-addon span-width">Note</span>
+            </div>
+            <textarea class="form-control" id="printer_note"></textarea>
+        </div>
+        <div class="input-group mb-1">
+            <span class="input-group-addon span-width">Buildings:</span>
+            <input class="form-control" list="buildings" id="buildingName" name="buildingName"/>
+            <datalist id="buildings">
+                {% for building in buildings %}
+                    <option value="{{ building.name }}"></option>
+                {% endfor %}
+            </datalist>
+            <span class="input-group-addon span-width">Floors:</span>
+            <input class="form-control" list="floors" id="floorName" name="floorName"/>
+            <datalist id="floors">
+            </datalist>
+        </div>
+        <div class="input-group mb-1">
+            <span class="input-group-addon span-width">Places:</span>
+            <input class="form-control" list="places" id="placeName" name="placeName"/>
+            <datalist id="places">
+            </datalist>
+            <span class="input-group-addon span-width">Rooms:</span>
+            <input class="form-control" list="rooms" id="roomName" name="roomName"/>
+            <datalist id="rooms">
+            </datalist>
+        </div>
+        <div data-alerts="alerts" data-titles='{"success": "<em>OK!</em>", "error": "<em>Error!</em>"}' data-ids="myid"
+             data-fade="3000"></div>
+        </div>
+    </div>
+    <div id="dialog_add_spare" title="Add spare">
+        <div data-alerts="alerts" data-titles='{"success": "<em>OK!</em>", "error": "<em>Error!</em>"}' data-ids="myid"
+             data-fade="3000"></div>
+        <div class="input-group mb-1">
+            <span class="input-group-addon span-width">Add:</span>
+            <input type="text" class="form-control" id="spare_amount">
+        </div>
     </div>
 
-  </div>
-</div>
-<div id="dialog_add_printer" title="Add printer">
-  <div data-alerts="alerts" data-titles='{"success": "<em>OK!</em>", "error": "<em>Error!</em>"}' data-ids="myid"
-       data-fade="3000"></div>
-  <div class="input-group">
-    <span class="input-group-addon">prefix mask</span>
-    <select class="custom-select" id="inputGroupSelect01">
-      {% for pm in inv_prefix_masks%}
-      <option {% if forloop.first %}selected{% endif %} value="{{ pm }}">{{ pm }}</option>
-      {% endfor %}
-    </select>
-  </div>
-  <div class="input-group">
-    <span class="input-group-addon">Inventory #</span>
-    <input type="text" class="form-control" id="inv_number">
-  </div>
-  <div class="input-group">
-    <div class="input-group-addon">
-      <span class="input-group-text">Note</span>
-    </div>
-    <textarea class="form-control" id="printer_note"></textarea>
-  </div>
-</div>
-{% endblock content %} {% block js %}
-<script>
-  $(function() {
-    $('[data-toggle="tooltip"]').tooltip();
-    $("#dialog_add_printer").dialog({
-      modal: true,
-      autoOpen: false,
-      classes: {
-        "ui-dialog-titlebar": "custom-info"
-      },
-      minWidth: 600,
-      buttons: [{
-        text: "Save",
-        icon: "ui-icon-disk",
-        click: function() {
-          var mask = $("#inputGroupSelect01 option:selected").text();
-          var inv_number = $("#inv_number").val();
-          var note = $("#printer_note").val();
-          var action = "create";
-          $.ajax({
-            type: "POST",
-            url: request_path,
-            data: {
-              mask: mask,
-              inv_number: inv_number,
-              note: note,
-              action: action,
-            },
-            dataType: "json",
-            success: function(data) {
-              var json = JSON.parse(JSON.stringify(data));
-              if (json.success) {
-                $(document).trigger("add-alerts", [{
-                  'message': json.success, //
-                  'priority': 'success' // error, warning, success
-                }]);
-              }
-              if (json.error) {
-                  $(document).trigger("add-alerts", [{
-                    'message': json.error, //
-                    'priority': 'error' // error, warning, success
-                  }]);
+{% endblock content %}
+{% block js %}
+    <script>
+        var spareid = undefined;
+        $(function () {
+            $('[data-toggle="tooltip"]').tooltip();
+            $("#dialog_add_printer").dialog({
+                modal: true,
+                autoOpen: false,
+                open : function(event, ui) {
+                        originalContent = $("#dialog_add_spare").html();
+                        },
+                close : function(event, ui) {
+                        $("#dialog_add_spare").html(originalContent);
+                        },
 
-              }
-            },
-            error: function() {
-                $(document).trigger("add-alerts", [{
-                  'message': "Server not responding.", //
-                  'priority': 'error' // error, warning, success
-                }]);
+                classes: {
+                    "ui-dialog-titlebar": "custom-info"
+                },
+                minWidth: 600,
+                buttons: [{
+                    text: "Save",
+                    icon: "ui-icon-disk",
+                    click: function () {
+                        let mask = $("#mask option:selected").text();
+                        let inv_number = $("#inv_number").val();
+                        let note = $("#printer_note").val();
+                        let building = $("#buildingName").val();
+                        let floor = $("#floorName").val();
+                        let room = $("#roomName").val();
+                        let place = $("#placeName").val();
+                        let action = "addPrinterItem";
+                        $.ajax({
+                            type: "POST",
+                            url: request_path,
+                            data: {
+                                mask: mask,
+                                inv_number: inv_number,
+                                note: note,
+                                building: building,
+                                floor: floor,
+                                room: room,
+                                place: place,
+                                action: action,
+                            },
+                            dataType: "json",
+                            success: function (data) {
+                                var json = JSON.parse(JSON.stringify(data));
+                                if (json.success) {
+                                    $(document).trigger("add-alerts", [{
+                                        'message': json.success, //
+                                        'priority': 'success' // error, warning, success
+                                    }]);
+                                    $("#dialog_add_printer").dialog("close");
+                                    location.reload(true);
+                                }
+                                if (json.error) {
+                                    $(document).trigger("add-alerts", [{
+                                        'message': json.error, //
+                                        'priority': 'error' // error, warning, success
+                                    }]);
+                                }
+                            },
+                            error: function () {
+                                $(document).trigger("add-alerts", [{
+                                    'message': "Server not responding.", //
+                                    'priority': 'error' // error, warning, success
+                                }]);
 
-            },
-          });
+                            },
+                        });
+                    }
+                }],
+            });
+            $("#dialog_add_spare").dialog({
+                modal: true,
+                autoOpen: false,
+                open : function(event, ui) {
+                        originalContent = $("#dialog_add_spare").html();
+                        },
+                close : function(event, ui) {
+                        $("#dialog_add_spare").html(originalContent);
+                        },
+                classes: {
+                    "ui-dialog-titlebar": "custom-info"
+                },
+                minWidth: 600,
+                buttons: [{
+                    text: "Add",
+                    icon: "ui-icon-disk",
+                    click: function () {
+                        var amount = $("#spare_amount").val();
+                        var action = "addSpareItem";
+                        $.ajax({
+                            type: "POST",
+                            url: request_path,
+                            data: {
+                                spareId: spareid,
+                                amount: amount,
+                                action: action,
+                            },
+                            dataType: "json",
+                            success: function (data) {
+                                var json = JSON.parse(JSON.stringify(data));
+                                message.print(json);
+                                if (json.success) {
+                                    $('[data-sparevalue='+spareid+']').text(json.instock);
+                                    $("#dialog_add_spare").dialog("close");
+                                }
+                            },
+                            error: function () {
+                                $(document).trigger("add-alerts", [{
+                                    'message': "Server not responding.", //
+                                    'priority': 'error' // error, warning, success
+                                }]);
+
+                            },
+                        });
+                    }
+                }],
+            });
+            $("#btn_addprinter").click(function () {
+                $("#dialog_add_printer").dialog("open");
+                $("#inv_number").focus();
+            });
+            $(".btn_addspare").click(function () {
+                spareid = $(this).attr('data-spareid');
+                $("#dialog_add_spare").dialog("open");
+                $("#add_spare").focus();
+            });
+            $("#buildingName").on('input', function () {
+                var val = this.value;
+                if($('#buildings option').filter(function(){
+                    return this.value === val;
+                }).length) {
+                    $("#floors").empty();
+                    $("#floorName").val('');
+                    $("#rooms").empty();
+                    $("#roomName").val('');
+                    $("#places").empty();
+                    $("#placeName").val('');
+                    $.ajax({
+                        type: "POST",
+                        url: request_path,
+                        data: {
+                            building: this.value,
+                            action: "getFloors"
+                        },
+                        dataType: "json",
+                        success: function(data) {
+                            var json = JSON.parse(JSON.stringify(data));
+                            message.print(json);
+                            if (json.floors !== undefined) {
+                                for (let i=0; i < json.floors.length; i++) {
+                                    $('#floors').append("<option value='" + json.floors[i] + "'>");
+                                }
+                            }
+                        },
+                        error: function () {
+                            $(document).trigger("add-alerts", [{
+                                'message': "Server not responding.", //
+                                'priority': 'error' // error, warning, success
+                        }]);
+
+                    },
+                })
+            }
+            })
+            $("#floorName").on('input', function () {
+                var val = this.value;
+                if($('#floors option').filter(function(){
+                    return this.value === val;
+                }).length) {
+                    $("#rooms").empty();
+                    $("#roomName").val('');
+                    $("#places").empty();
+                    $("#placeName").val('');
+                    let building = $("#buildingName").val();
+                    $.ajax({
+                        type: "POST",
+                        url: request_path,
+                        data: {
+                            building: building,
+                            floor: this.value,
+                            action: "getRooms"
+                        },
+                        dataType: "json",
+                        success: function(data) {
+                            var json = JSON.parse(JSON.stringify(data));
+                            message.print(json);
+                            if (json.rooms !== undefined) {
+                                $('#rooms').append("<option value='--------'>");
+                                for (let i=0; i < json.rooms.length; i++) {
+                                    $('#rooms').append("<option value='" + json.rooms[i] + "'>");
+                                }
+                            }
+                            if (json.places !== undefined) {
+                                for (let i=0; i < json.places.length; i++) {
+                                    $('#places').append("<option value='" + json.places[i] + "'>");
+                                }
+                            }
+                        },
+                        error: function () {
+                            $(document).trigger("add-alerts", [{
+                                'message': "Server not responding.", //
+                                'priority': 'error' // error, warning, success
+                        }]);
+
+                    },
+                })
+            }
+            })
+            $("#roomName").on('input', function () {
+                var val = this.value;
+                if($('#rooms option').filter(function(){
+                    return this.value === val
+                }).length) {
+                    $("#places").empty();
+                    $("#placeName").val('');
+                    let building = $("#buildingName").val();
+                    let floor = $("#floorName").val();
+                    $.ajax({
+                        type: "POST",
+                        url: request_path,
+                        data: {
+                            building: building,
+                            floor: floor,
+                            room: this.value,
+                            action: "getPlaces"
+                        },
+                        dataType: "json",
+                        success: function(data) {
+                            var json = JSON.parse(JSON.stringify(data));
+                            message.print(json);
+                            if (json.rooms !== undefined) {
+
+                                for (let i=0; i < json.rooms.length; i++) {
+                                    $('#rooms').append("<option value='" + json.rooms[i] + "'>");
+                                }
+                            }
+                            if (json.places !== undefined) {
+                                for (let i=0; i < json.places.length; i++) {
+                                    $('#places').append("<option value='" + json.places[i] + "'>");
+                                }
+                            }
+                        },
+                        error: function () {
+                            $(document).trigger("add-alerts", [{
+                                'message': "Server not responding.", //
+                                'priority': 'error' // error, warning, success
+                        }]);
+
+                    },
+                })
+            }
+            })
+        });
+        let message = {
+            print: function (json) {
+                if (json.success !== undefined) {
+                    $(document).trigger("add-alerts", [{
+                        'message': json.success, //
+                        'priority': 'success' // error, warning, success
+                    }]);
+                }
+                if (json.error !== undefined) {
+                    $(document).trigger("add-alerts", [{
+                        'message': json.error, //
+                        'priority': 'error' // error, warning, success
+                    }]);
+
+                }
+            }
         }
-      }],
-    });
-    $("#btn_addprinter").click(function() {
-      $("#dialog_add_printer").dialog("open");
-      $("#inv_number").focus();
-    })
-  });
-</script>
+    </script>
 {% endblock js %} {% block css %}
-<style>
-  .custom-info {
-    background: #C2D7E9;
-  }
+    <style>
+        .custom-info {
+            background: #C2D7E9;
+        }
 
-</style>
+        .span-width {
+            width: 100px;
+        }
+    .brd {
+        border-bottom: 1px solid gray;
+    }
+    a.lnk_ {
+        text-align: center;
+        color: white;
+        text-decoration: none;
+    }
+
+    </style>
 {% endblock css %}

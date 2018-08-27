@@ -3,58 +3,69 @@
 {% block js %}
 {% endblock js %}
 {% block content %}
-<div class="container w-75">
+    <div class="container w-75">
 
-<div class="row justify-content-center">
-  <div class="col-lg-12 p-3">
-  <form action="/printers/" method="get">
-    <div class="input-group">
+        <div class="row justify-content-center">
+            <div class="col-lg-12 p-3">
+                <form action="/printers/" method="get">
+                    <div class="input-group">
       <span class="input-group-btn">
         <button class="btn btn-secondary" type="submit">Go!</button>
       </span>
-      <div class="input-group-btn">
-        <button type="button" class="btn btn-secondary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true"
-                aria-expanded="false">
-          {% if manufacturer and paginator.count %} {{manufacturer}} {%else%}Company{% endif %}
-        </button>
-        <div class="dropdown-menu">
-          <a class="dropdown-item" href="/printers/?variety={{variety}}">Clear</a>
-          <a class="dropdown-item" href="/printers/">All</a>
-        </div>
-      </div>
-      <input id='manufacturer' name="manufacturer" type="text" class="form-control" placeholder="Manufacturer filter"
-             value="{{manufacturer}}">
-      <input id='variety' name="variety" type="text" class="form-control" placeholder="Search: Printer model"
-             value="{{variety}}">
-    </div>
-  </form>
-  </div>
-  {% if paginator.count %}
-  {% for printer in printers %}
-    <div class="col-12 col-md-3">
-      <figure class="figure">
-        <a href="{{host_url}}{{printer.id }}" target="_blank">
-          <img style="width: 110px; height: 110px; object-fit: cover;" class="figure-img img-fluid rounded" src="{{ MEDIA_URL}}{{ printer.image }}" alt="Printer Image">
-        <figcaption class="figure-caption">
-          <p>{{printer.manufacturer}} {{ printer.name }}</p>
-        </figcaption>
-        </a>
-      </figure>
-      </div>
-  {% endfor %}
-</div>
+                        <div class="input-group-btn">
+                            <button type="button" class="btn btn-secondary dropdown-toggle" data-toggle="dropdown"
+                                    aria-haspopup="true"
+                                    aria-expanded="false">
+                                {% if manufacturer %} {{ manufacturer }} {% else %}
+                                    Company{% endif %}
+                            </button>
+                            <div class="dropdown-menu">
+                                {% for m in manufacturers %}
+                                    <a class="dropdown-item"
+                                       href="/printers/?manufacturer={{ m }}&variety={{ variety }}">{{ m }}</a>
+                                {% endfor %}
+                                <a class="dropdown-item" href="/printers/?variety={{ variety }}">All companies</a>
+                                <a class="dropdown-item" href="/printers/">All</a>
+                            </div>
+                        </div>
+                        <input id='variety' name="variety" type="text" class="form-control"
+                               placeholder="Search: Printer model"
+                               value="{{ variety }}">
+                        <input id='inv_num' name="inv_num" type="text" class="form-control"
+                               placeholder="Inventory number"
+                               value="">
+                    </div>
+                </form>
+            </div>
+            {% if paginator.count %}
+                {% for printer in printers %}
+                    <div class="col-12 col-md-3">
+                        <figure class="figure">
+                            <a href="{{ host_url }}{{ printer.id }}" target="_blank">
+                                <img style="width: 110px; height: 110px; object-fit: cover;"
+                                     class="figure-img img-fluid rounded" src="{{ MEDIA_URL }}{{ printer.image }}"
+                                     alt="Printer Image">
+                                <figcaption class="figure-caption">
+                                    <p>{{ printer.manufacturer }} {{ printer.name }}</p>
+                                </figcaption>
+                            </a>
+                        </figure>
+                    </div>
+                {% endfor %}
+                </div>
 
-<nav class="fixed-bottom" aria-label="Paginator">
-  <ul class="pagination justify-content-center">
-    {% for p in paginator.page_range %}
-      <li class="page-item{% if p == page %} active{% endif %}"><a class="page-link"
-                                                                   href="?manufacturer={{manufacturer}}&variety={{variety}}&page={{p}}">{{p}}</a></li>
-    {% endfor %}
-  </ul>
-</nav>
-  </div>
-{% else %}
-<h2>There are no such printers.</h2>
-{% endif %}
+                <nav class="fixed-bottom" aria-label="Paginator">
+                    <ul class="pagination justify-content-center">
+                        {% for p in paginator.page_range %}
+                            <li class="page-item{% if p == page %} active{% endif %}">
+                                <a class="page-link" href="?manufacturer={{ manufacturer }}&variety={{ variety }}&page={{ p }}">{{ p }}</a>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                </nav>
+                </div>
+            {% else %}
+                <h2>There are no such printers.</h2>
+            {% endif %}
 {% endblock content %}
 
