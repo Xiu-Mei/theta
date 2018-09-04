@@ -1,0 +1,185 @@
+{% extends "base.html" %} {% load static %} {% load template_filters %} {% block content %}
+    <div class="container w-100">
+        <div class="alert alert-secondary">
+            <div class="row">
+                <div class="col-2"><h4 STYLE="text-align: center">Inv.#: {{ printer_item.inventory_number }}</h4>
+                </div>
+                <div class="col-10">
+                    <h4>Building: <span class="badge badge-secondary">{{ building.name }}</span> Floor: <span
+                            class="badge badge-secondary">{{ floor.name }}</span>
+                        Room: <span class="badge badge-secondary">{% if room %}{{ room.name }}{% else %}
+                            ----{% endif %}</span> Place: <span class="badge badge-secondary">{{ place.name }}</span>
+                    </h4>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col col-md-4 p-3">
+                <img style="object-fit: cover;" class="figure-img img-fluid rounded"
+                     src="{{ MEDIA_URL }}{{ printer.image }}"
+                     alt="Printer Image">
+            </div>
+            <div class="col col-md-4 p-3">
+                {% if printer.type == 'laser' %}
+                    <div class="alert alert-secondary" role="alert">
+                        Laser printer: {{ printer.manufacturer }} {{ printer.name }}
+                    </div>
+                {% else %}
+                    <div class="alert alert-info" role="alert">
+                        Ink printer: {{ printer.manufacturer }} {{ printer.name }}
+                    </div>
+                {% endif %} {% if printer.mfp %}
+                <h4><span class="badge badge-success">MFP</span></h4> {% endif %} {% if printer.usb %}
+                <h4><span class="badge badge-secondary">usb</span></h4> {% endif %} {% if printer.ethernet %}
+                <h4><span class="badge badge-secondary">ethernet</span></h4> {% endif %} {% if printer.wireless %}
+                <h4><span class="badge badge-secondary">wireless</span></h4> {% endif %} {% if printer.duplex %}
+                <h4><span class="badge badge-dark">duplex</span></h4> {% endif %} {% if printer.color %}
+                <h4><span class="badge badge-warning">color</span></h4> {% endif %} {% if printer.comment %}
+                <div class="card-body">
+                    printer.comment
+                </div>
+            {% endif %}
+
+            </div>
+            <div class="col col-md-4 p-3">
+                <div id="accordion">
+                    <div class="card">
+                        <div class="card-header" id="headingTwo">
+                            <h5 class="mb-0">
+                                <button class="btn btn-secondary" data-toggle="collapse"
+                                        data-target="#collapseCartridges"
+                                        aria-expanded="false" aria-controls="collapseCartridges">
+                                    Cartridges
+                                </button>
+                            </h5>
+                        </div>
+                        <div id="collapseCartridges" class="collapse show" aria-labelledby="headingTwo"
+                             data-parent="#accordion">
+                            <div class="card-body">
+                                {% for cartridge, cartridge_item in cartridges %}
+                                    <div class="btn-group" role="group">
+                                        <span class="btn btn-outline-secondary" data-toggle="tooltip"
+                                           data-placement="left" title="{{ cartridge.name }}"><img
+                                                style="margin-top:4px; height:32px;" class="rounded mx-auto d-block"
+                                                src="{{ MEDIA_URL }}/images/printers/{% if cartridge.color %}{{ cartridge.color }}{% else %}black{% endif %}.png"></span>
+                                        <span class="btn btn-dark instock" data-cartridge_item_id="{% if cartridge_item %}{{ cartridge_item.id }}{% endif %}"><h3
+                                                style="margin-top:3px;">{% if cartridge_item %}{{ cartridge_item.in_stock }}{% else %}0{% endif %}</h3></span>
+                                        <span class="btn btn-dark issuing" data-cartridge_item_id="{% if cartridge_item %}{{ cartridge_item.id }}{% endif %}">
+                                            <h3 style="margin-top:3px;">&minus;</h3>
+                                        </span>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                <div class="btn-group">
+                                    <button class="btn btn-secondary">
+                                        Repairs <span class="badge badge-light">{{ repairs|length }}</span>
+                                    </button>
+                                    <button type="button" class="btn btn-success" id="btn_addrepair">&#65291;</button>
+                                </div>
+                            </h5>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div style="margin-right: 0px;" class="row">
+            <label class="col-2 col-form-label" for="select_condition">Condition:</label>
+            <div style="padding-right: 0px;" class="col-8">
+                <div class="btn-group btn-group-toggle" data-toggle="buttons">
+                  <label class="btn btn-outline-success {% if printer_item.working_condition == 'working' %}active{% endif %}">
+                    <input type="radio" name="condition" value="working" autocomplete="off" >working</label>
+                  <label class="btn btn-outline-danger {% if printer_item.working_condition == 'broken' %}active{% endif %}">
+                    <input type="radio" name="condition" value="broken" autocomplete="off">broken</label>
+                  <label class="btn btn-outline-warning {% if printer_item.working_condition == 'partial' %}active{% endif %}">
+                    <input type="radio" name="condition" value="partial" autocomplete="off">partial</label>
+                  <label class="btn btn-outline-secondary {% if printer_item.working_condition == 'withdraw' %}active{% endif %}">
+                    <input type="radio" name="condition" value="withdraw" autocomplete="off">withdraw</label>
+                </div>
+            </div>
+            <button class="col-2 btn btn-primary" id="savePrintItem">Save</button>
+
+            <label class="col-sm-2 col-form-label" for="TA_PrinterItemCommentary">About Printer:</label>
+            <div style="padding: 10px 0px 0px 15px;" class="col-sm-10">
+                <textarea type="text" class="md-textarea form-control" id="TA_PrinterItemCommentary"
+                          rows="3">{% if printer_item.notes %}{{ printer_item.notes }}{% endif %}</textarea>
+            </div>
+        </div>
+        <div style="margin: 20px 0px 20px 0px;">
+                <div data-alerts="alerts" data-titles='{"success": "<em>OK!</em>", "error": "<em>Error!</em>"}'
+                     data-ids="myid"
+                     data-fade="3000">
+                </div>
+        </div>
+    </div>
+
+    {#<div id="dialog_add_repair" title="Repair">#}
+    {#    <div class="input-group mb-1">#}
+    {#        <span class="input-group-addon span-width">prefix mask</span>#}
+    {#        <select class="custom-select" id="mask">#}
+    {#            {% for pm in inv_prefix_masks %}#}
+    {#                <option {% if forloop.first %}selected{% endif %} value="{{ pm }}">{{ pm }}</option>#}
+    {#            {% endfor %}#}
+    {#        </select>#}
+    {#    </div>#}
+    {#    <div class="input-group mb-1">#}
+    {#        <span class="input-group-addon span-width">Inventory #</span>#}
+    {#        <input type="text" class="form-control" id="inv_number">#}
+    {#    </div>#}
+    {#    <div class="input-group mb-1">#}
+    {#        <div class="input-group-addon">#}
+    {#            <span class="input-group-addon span-width">Note</span>#}
+    {#        </div>#}
+    {#        <textarea class="form-control" id="printer_note"></textarea>#}
+    {#    </div>#}
+    {#    <div class="input-group mb-1">#}
+    {#        <span class="input-group-addon span-width">Buildings:</span>#}
+    {#        <input class="form-control" list="buildings" id="buildingName" name="buildingName"/>#}
+    {#        <datalist id="buildings">#}
+    {#            {% for building in buildings %}#}
+    {#                <option value="{{ building.name }}"></option>#}
+    {#            {% endfor %}#}
+    {#        </datalist>#}
+    {#        <span class="input-group-addon span-width">Floors:</span>#}
+    {#        <input class="form-control" list="floors" id="floorName" name="floorName"/>#}
+    {#        <datalist id="floors">#}
+    {#        </datalist>#}
+    {#    </div>#}
+    {#    <div class="input-group mb-1">#}
+    {#        <span class="input-group-addon span-width">Places:</span>#}
+    {#        <input class="form-control" list="places" id="placeName" name="placeName"/>#}
+    {#        <datalist id="places">#}
+    {#        </datalist>#}
+    {#        <span class="input-group-addon span-width">Rooms:</span>#}
+    {#        <input class="form-control" list="rooms" id="roomName" name="roomName"/>#}
+    {#        <datalist id="rooms">#}
+    {#        </datalist>#}
+    {#    </div>#}
+    {#    <div data-alerts="alerts" data-titles='{"success": "<em>OK!</em>", "error": "<em>Error!</em>"}' data-ids="myid"#}
+    {#         data-fade="3000"></div>#}
+    {#    </div>#}
+{% endblock content %}
+
+{% block js %}
+    <script src="{% static "js/printers/printer_item.js" %}"></script>
+{% endblock js %}
+
+{% block css %}
+    <style>
+        .padding-zero {
+            padding: 0px;
+        }
+
+        .padding--right-15 {
+            padding: 0px 15px 0px 0px;
+        }
+
+        .span-width {
+            width: 100px;
+        }
+    </style>
+{% endblock css %}

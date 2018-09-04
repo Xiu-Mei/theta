@@ -33,12 +33,21 @@ class Printer(models.Model):
         return '{} {}'.format(self.manufacturer, self.name)
 
 
+WORKING_CONDITIONS = (
+    ('working', 'working'),
+    ('broken', 'broken'),
+    ('partial', 'partial'),
+    ('withdraw', 'withdraw'),
+)
+
+
 class PrinterItem(models.Model):
     printer = models.ForeignKey(Printer, on_delete=models.PROTECT)
     office = models.ForeignKey(Office, on_delete=models.PROTECT)
     place = models.ForeignKey(Place, on_delete=models.PROTECT)
     prefix = models.ForeignKey(InventoryNumberPrefix, on_delete=models.PROTECT, blank=True, null=True)
     inventory_number = models.CharField(verbose_name='inventory number', max_length=32)
+    working_condition = models.CharField(max_length=32, choices=WORKING_CONDITIONS, default='working')
     notes = models.TextField(blank=True, null=True)
 
     def __str__(self):
@@ -66,5 +75,5 @@ class PrinterRepairJob(models.Model):
 
 class PrinterChangeCartridgeJob(models.Model):
     printer_item = models.ForeignKey(PrinterItem, on_delete=models.PROTECT)
-    date_time = models.DateTimeField()
-    printed_sheets = models.IntegerField(blank=True, null=True, verbose_name='printed sheets')
+    date_time = models.DateTimeField(auto_now_add=True, blank=True)
+    # printed_sheets = models.IntegerField(blank=True, null=True, verbose_name='printed sheets')

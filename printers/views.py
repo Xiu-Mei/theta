@@ -2,9 +2,10 @@ from django.core.paginator import Paginator
 from django.views.generic import TemplateView
 from django.shortcuts import redirect
 from django.http import JsonResponse
+from django.core.exceptions import ObjectDoesNotExist
 
 from devices.models import InventoryNumberPrefix, Manufacturer
-from printers.models import Printer, PrinterItem
+from printers.models import Printer, PrinterItem, PrinterChangeCartridgeJob
 from printer_spares.models import Cartridge, Spare, SpareItem, CartridgeItem
 from location.models import Building, Floor, Place, Room
 from utility.validation import validation, mask_validation
@@ -87,16 +88,20 @@ class PrinterView(OfficeAdminValidationMixin, TemplateView):
 
         self.params['printer_id'] = self.kwargs['printer_id']
 
-        self.get_context_data()
+        if not self.get_context_data():
+            return redirect('printers')
         return self.render_to_response(self.context)
 
     def get_context_data(self, **kwargs):
         self.context.update(super(PrinterView, self).get_context_data(**kwargs))
-        self.context['printer'] = Printer.objects.get(id=self.params['printer_id'])
+        try:
+            self.context['printer'] = Printer.objects.get(id=self.params['printer_id'])
+        except Printer.DoesNotExist:
+            return False
         self.context['printer_items'] = PrinterItem.objects.filter(
             office=self.office,
             printer=self.params['printer_id'],
-        ).values('inventory_number').order_by('inventory_number')
+        ).values('id', 'inventory_number').order_by('inventory_number')
         self.context['cartridges'] = Cartridge.objects.filter(printers__id=self.params['printer_id'])
         cartridge_items = dict()
         for cartridge in self.context['cartridges']:
@@ -118,6 +123,7 @@ class PrinterView(OfficeAdminValidationMixin, TemplateView):
         self.context['inv_prefix_masks'] = self.collect_prefixes()
         self.context['buildings'] = Building.objects.filter(office=self.office)
         self.context['menu'] = 'printers'
+        return True
 
     def post(self, request, **kwargs):
         if self.is_office_admin() is False:
@@ -192,7 +198,7 @@ class PrinterView(OfficeAdminValidationMixin, TemplateView):
         self.action = self.request.POST.get('action')
         validation_params['action'] = {
             'symbol_set': 'en',
-            'allowed_values': (key for key in actions.keys()),
+            'allowed_values': tuple(key for key in actions.keys()),
             'required': True,
         }
         if not validation({'action': self.action}, validation_params):
@@ -378,7 +384,171 @@ class PrinterView(OfficeAdminValidationMixin, TemplateView):
             self.get_places_for_room_context()
 
 
+class PrinterItemView(OfficeAdminValidationMixin, TemplateView):
+    template_name = 'pages/printers/printer_item.html'
 
+    def __init__(self):
+        super(PrinterItemView, self).__init__()
+        self.get_params = dict()
+        self.post_params = dict()
+        self.context = dict()
+        self.params = dict()
+        self.action = ''
 
+    def get(self, request, *args, **kwargs):
+        if self.is_office_admin() is False:
+            return redirect('account_login')
+
+        self.params['printer_item_id'] = self.kwargs['printer_item_id']
+
+        if not self.get_context_data():
+            return redirect('printers')
+        return self.render_to_response(self.context)
+
+    def get_context_data(self, **kwargs):
+        self.context.update(super(PrinterItemView, self).get_context_data(**kwargs))
+        try:
+            self.context['printer_item'] = PrinterItem.objects.get(
+                office=self.office,
+                id=self.params['printer_item_id']
+            )
+            self.context['printer'] = self.context['printer_item'].printer
+        except ObjectDoesNotExist:
+            return False
+
+        cartridges = Cartridge.objects.filter(printers__id=self.context['printer'].id)
+        self.context['cartridges'] = list()
+        for cartridge in cartridges:
+            try:
+                cartridge_item = CartridgeItem.objects.get(
+                    office=self.office,
+                    cartridge=cartridge,
+                )
+                self.context['cartridges'].append((cartridge, cartridge_item))
+            except ObjectDoesNotExist:
+                self.context['cartridges'].append((cartridge, 0))
+                continue
+        self.context['spares'] = Spare.objects.filter(printers__id=self.context['printer'].id)
+        spare_items = dict()
+        for spare in self.context['spares']:
+            i = SpareItem.objects.filter(
+                office=self.office,
+                spare__id=spare.id,
+            ).values_list('in_stock', flat=True)
+            spare_items[spare.id] = i[0] if i else i
+        self.context['spare_items'] = spare_items
+
+        self.context['place'] = self.context['printer_item'].place
+        try:
+            if self.context['printer_item'].place.room_id:
+                self.context['room'] = Room.objects.get(id=self.context['printer_item'].place.room_id)
+            self.context['floor'] = Floor.objects.get(id=self.context['printer_item'].place.floor_id)
+            self.context['building'] = Building.objects.get(office=self.office,
+                                                            floor__id=self.context['floor'].id
+                                                            )
+        except ObjectDoesNotExist as e:
+            print(e)
+        self.context['menu'] = 'printers'
+        return True
+
+    def post(self, request, **kwargs):
+        if self.is_office_admin() is False:
+            return redirect('account_login')
+        if not request.is_ajax():
+            return redirect('printer_item', printer_item_id=self.params['printer_item_id'])
+        self.params['printer_item_id'] = self.kwargs['printer_item_id']
+
+        self.get_post_params() and self.get_post_context()
+
+        if 'error' not in self.context.keys():
+            return JsonResponse(self.context)
+        else:
+            return JsonResponse({'error': self.context['error']})
+
+    def get_post_params(self):
+        actions = dict()
+        validation_params = dict()
+
+        actions['savePrinterItem'] = ('condition', 'notes',)
+        actions['cartridgeIssue'] = ('cartridge_id',)
+
+        validation_params['condition'] = {
+            'symbol_set': 'en',
+            'allowed_values': tuple(i2 for i1, i2 in PrinterItem._meta.get_field('working_condition').choices),
+        }
+        validation_params['notes'] = {
+            'symbol_set': 'en, ru',
+            'allowed': '-_/*().,!?\n',
+            'return_sentence': True,
+        }
+        validation_params['cartridge_id'] = {
+            'symbol_set': 'int',
+            'required': True,
+        }
+
+        self.action = self.request.POST.get('action')
+        validation_params['action'] = {
+            'symbol_set': 'en',
+            'allowed_values': tuple(key for key in actions.keys()),
+            'required': True,
+        }
+        if not validation({'action': self.action}, validation_params):
+            return False
+
+        for item in actions[self.action]:
+            if type(item) is not tuple:
+                self.post_params[item] = self.request.POST.get(item)
+            else:
+                self.post_params[item[0]] = self.request.POST.get(item[1])
+        return validation(self.post_params, validation_params)
+
+    def change_printer_item(self):
+        printer_item_changed = False
+        try:
+            printer_item = PrinterItem.objects.get(office=self.office,
+                                                   id=self.params['printer_item_id'],
+                                                   )
+            if self.post_params['condition']:
+                printer_item.working_condition = self.post_params['condition']
+                printer_item_changed = True
+            if self.post_params['notes'] and printer_item.notes != self.post_params['notes']:
+                printer_item.notes = self.post_params['notes']
+                printer_item_changed = True
+            elif not self.post_params['notes'] and printer_item.notes:
+                printer_item.notes = ''
+                printer_item_changed = True
+        except ObjectDoesNotExist:
+            self.context['error'] = 'Printer doesn\'t exist'
+            return
+        if printer_item_changed:
+            printer_item.save()
+            self.context['success'] = 'Printer updated.'
+
+    def cartridge_issue(self):
+        try:
+            cartridge_item = CartridgeItem.objects.get(
+                office=self.office,
+                id=self.post_params['cartridge_id'],
+            )
+        except ObjectDoesNotExist:
+            self.context['error'] = 'Wrong cartridge.'
+            return False
+        if cartridge_item.in_stock < 1:
+            self.context['error'] = 'Not enough cartridges.'
+            return False
+        cartridge_item.in_stock -= 1
+        cartridge_item.save()
+
+        PrinterChangeCartridgeJob.objects.create(printer_item_id=self.params['printer_item_id'])
+        self.context['instock'] = cartridge_item.in_stock
+        self.context['cartridge_item_id'] = cartridge_item.id
+        self.context['success'] = 'The cartridge is issued.'
+        return True
+
+    def get_post_context(self):
+        if self.action == 'savePrinterItem':
+            self.change_printer_item()
+        elif self.action == 'cartridgeIssue':
+            self.cartridge_issue()
 
 

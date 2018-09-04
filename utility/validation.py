@@ -66,7 +66,7 @@ def _validate(message, symbol_set, allowed=None, remove_tags=True,
         message = re.sub(clean, '', message)
     filtered_result = re.findall(re_symbol_set, message)
     if filtered_result:
-        if allowed_values is not ():
+        if allowed_values != ():
             for value in allowed_values:
                 if filtered_result[0] == value:
                     return filtered_result[0]
