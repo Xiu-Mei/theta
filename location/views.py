@@ -110,7 +110,7 @@ class FloorTemplateView(OfficeAdminValidationMixin, TemplateView):
         }
         self.post_params['text'] = self.request.POST.get('text')
         self.validation_params['text'] = {
-            'symbol_set': 'd, en, ru',
+            'symbol_set': 'w',
             'allowed': '_-',
             'return_sentence': True,
         }

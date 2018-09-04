@@ -150,18 +150,18 @@ class PrinterView(OfficeAdminValidationMixin, TemplateView):
         actions['getPlaces'] = ('building', 'floor', 'room')
 
         validation_params['mask'] = {
-            'symbol_set': 'w, d',
+            'symbol_set': 'w',
             'allowed': '-',
             'required': True,
         }
         validation_params['inv_number'] = {
-            'symbol_set': 'w, d',
+            'symbol_set': 'w',
             'allowed': '-',
             'required': True,
         }
         validation_params['note'] = {
-            'symbol_set': 'd, en, ru',
-            'allowed': '_-,.!?',
+            'symbol_set': 'w',
+            'allowed': '_-,.!?\n',
             'return_sentence': True,
         }
         validation_params['spare_id'] = {
@@ -173,24 +173,24 @@ class PrinterView(OfficeAdminValidationMixin, TemplateView):
             'required': True,
         }
         validation_params['building'] = {
-            'symbol_set': 'en, ru',
+            'symbol_set': 'w',
             'allowed': '-_/*()',
             'return_sentence': True,
             'required': True,
         }
         validation_params['floor'] = {
-            'symbol_set': 'en, ru',
+            'symbol_set': 'w',
             'allowed': '-_/*()',
             'return_sentence': True,
             'required': True,
         }
         validation_params['room'] = {
-            'symbol_set': 'en, ru',
+            'symbol_set': 'w',
             'allowed': '-_/*()',
             'return_sentence': True,
         }
         validation_params['place'] = {
-            'symbol_set': 'en, ru',
+            'symbol_set': 'w',
             'allowed': '-_/*()',
             'return_sentence': True,
             'required': True,
@@ -355,6 +355,7 @@ class PrinterView(OfficeAdminValidationMixin, TemplateView):
 
     def get_place(self):
         self.get_places()
+        # TODO: receive place id, that will allow have same name place on floor
         self.params['place'] = [place for place in self.params['places'] if place.name == self.post_params['place']]
         self.params['place'] = self.params['place'][0] if self.params['place'] else None
 
@@ -477,7 +478,7 @@ class PrinterItemView(OfficeAdminValidationMixin, TemplateView):
             'allowed_values': tuple(i2 for i1, i2 in PrinterItem._meta.get_field('working_condition').choices),
         }
         validation_params['notes'] = {
-            'symbol_set': 'en, ru',
+            'symbol_set': 'w',
             'allowed': '-_/*().,!?\n',
             'return_sentence': True,
         }

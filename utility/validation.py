@@ -57,7 +57,9 @@ def _validate(message, symbol_set, allowed=None, remove_tags=True,
         elif len(item) == 1:
             for i in (v for k, v in language_dictionary.items() if k[0] == item):
                 re_symbol_set += i
-    re_symbol_set += allowed if allowed else ''
+    if allowed:
+        allowed = allowed.replace('-', '\-')
+        re_symbol_set += allowed
     re_symbol_set += ']+'
     if re_symbol_set == '[]+':
         raise ValueError('Cannot parse symbol set')
