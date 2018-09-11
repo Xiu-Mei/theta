@@ -236,11 +236,11 @@ class PrinterView(OfficeAdminValidationMixin, TemplateView):
         if self.fetch_add_printer_params() is False:
             return False
         try:
-            PrinterItem.objects.get(printer_id=self.params['printer_id'],
-                                    office=self.office,
-                                    prefix=self.params['prefix'],
-                                    inventory_number=self.params['inv_number'],
-                                    )
+            PrinterItem.objects.get(
+                office=self.office,
+                prefix=self.params['prefix'],
+                inventory_number=self.params['inv_number'],
+            )
             self.context['error'] = 'Printer with this inventory number already exist.'
             return False
         except PrinterItem.DoesNotExist:
@@ -400,8 +400,8 @@ class PrinterItemView(OfficeAdminValidationMixin, TemplateView):
         if self.is_office_admin() is False:
             return redirect('account_login')
 
-        self.params['printer_item_id'] = self.kwargs['printer_item_id']
-
+        self.params['printer_item_id'] = (self.kwargs['printer_item_id']).lstrip('0')
+        print(self.params['printer_item_id'])
         if not self.get_context_data():
             return redirect('printers')
         return self.render_to_response(self.context)
@@ -457,8 +457,7 @@ class PrinterItemView(OfficeAdminValidationMixin, TemplateView):
             return redirect('account_login')
         if not request.is_ajax():
             return redirect('printer_item', printer_item_id=self.params['printer_item_id'])
-        self.params['printer_item_id'] = self.kwargs['printer_item_id']
-
+        self.params['printer_item_id'] = (self.kwargs['printer_item_id']).lstrip('0')
         self.get_post_params() and self.get_post_context()
 
         if 'error' not in self.context.keys():
