@@ -260,17 +260,17 @@ class PrinterView(OfficeAdminValidationMixin, TemplateView):
         return True
 
     def collect_prefixes(self):
-        try:
-            latest_printer_item = PrinterItem.objects.filter(office=self.office,
-                                                             printer=self.params['printer_id'],
-                                                             ).order_by('-id')
-            return [latest_printer_item[0].prefix] + [str(prefix) for prefix in
-                                                      InventoryNumberPrefix.objects.filter(
-                                                              for_item='Printers').exclude(
-                                                              id=latest_printer_item[0].prefix.id)]
-
-        except ObjectDoesNotExist:
-            return [str(prefix) for prefix in InventoryNumberPrefix.objects.filter(for_item='Printers')]
+        latest_printer_item = PrinterItem.objects.filter(office=self.office,
+                                                         printer=self.params['printer_id'],
+                                                         ).order_by('-id').first()
+        if latest_printer_item:
+            result = [latest_printer_item.prefix] + \
+                     [str(prefix) for prefix in InventoryNumberPrefix.objects.filter(
+                                                          for_item='Printers').exclude(
+                                                          id=latest_printer_item.prefix.id)]
+        else:
+            result = [str(prefix) for prefix in InventoryNumberPrefix.objects.filter(for_item='Printers')]
+        return result
 
     def fetch_add_spare_params(self):
         try:
