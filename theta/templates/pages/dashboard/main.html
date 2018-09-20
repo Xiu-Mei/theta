@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% load static %}
+{% block js %}
+    <script src="{% static "js/dashboard/dashboard.js" %}"></script>
+{% endblock js %}
+{% block content %}
+    <div class="container w-75">
+        <div class="col p-3">
+            <div class="input-group mb-3">
+                <select class="custom-select" id="search_action">
+                    {% for action in search_actions %}
+                    <option value="{{ action.0 }}">{{ action.1 }}</option>
+                    {% endfor %}
+                </select>
+                <input id='search_str' name="variety" type="text" class="form-control"
+                       placeholder=""
+                       value="">
+
+            </div>
+        </div>
+        <div class="col" id="search-result"></div>
+    </div>
+{% endblock content %}

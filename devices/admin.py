@@ -20,7 +20,7 @@ class InventoryNumberPrefixForm(forms.ModelForm):
 
 class InventoryNumberPrefixAdmin(admin.ModelAdmin):
     form = InventoryNumberPrefixForm
-    list_display = ('prefix', 'inventory_number_mask', 'get_devices')
+    list_display = ('for_item', 'prefix', 'inventory_number_mask')
 
 
 class ManufacturerAdminForm(forms.ModelForm):

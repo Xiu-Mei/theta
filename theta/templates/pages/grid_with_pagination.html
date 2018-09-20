@@ -1,0 +1,49 @@
+{% if redirect %}
+    <script>
+    document.location.href = "{{ redirect }}"
+    </script>
+{% else %}
+{% if items or paginator.count %}
+    {% for item in items %}
+        <div class="col-12 col-md-3">
+            <figure class="figure">
+                <a href="{{ item.url }}" target="_blank">
+                    <img style="width: 110px; height: 110px; object-fit: cover;"
+                         class="figure-img img-fluid rounded" src="{{ item.image }}"
+                         alt="{{ image_alt }}">
+                    <figcaption class="figure-caption">
+                        <p>{{ caption }}</p>
+                    </figcaption>
+                </a>
+            </figure>
+        </div>
+    {% endfor %}
+
+    </div>
+    <nav class="fixed-bottom" aria-label="Paginator">
+        <ul class="pagination justify-content-center">
+            {% for p in paginator.page_range %}
+                <li class="page-item{% if p == page %} active{% endif %}">
+                    <a class="page-link"
+                       href="#">{{ p }}</a>
+                </li>
+            {% endfor %}
+        </ul>
+    </nav>
+    </div>
+{% else %}
+    <h2>There are not such items.</h2>
+{% endif %}
+<div data-alerts="alerts" data-titles='{"success": "<em>OK!</em>", "error": "<em>Error!</em>"}'
+     data-ids="myid"
+     data-fade="3000">
+</div>
+{% if error %}
+    <script>
+        $(document).trigger("add-alerts", [{
+            'message': {{ error }}, //
+            'priority': 'error'
+        }]);
+    </script>
+{% endif %}
+{% endif %}

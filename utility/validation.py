@@ -23,7 +23,7 @@ def validation(values, validations):
     return True
 
 
-def _validate(message, symbol_set, allowed=None, remove_tags=True,
+def _validate(message, symbol_set, default_value=None, allowed=None, remove_tags=True,
               return_sentence=False, required=False, allowed_values=()):
     """
     :param message: the string for validation
@@ -36,6 +36,8 @@ def _validate(message, symbol_set, allowed=None, remove_tags=True,
     :return: string or none
     """
     if message == '' or message is None:
+        if default_value is not None:
+            return default_value
         if not required:
             return None
         else:
@@ -83,7 +85,7 @@ def _validate(message, symbol_set, allowed=None, remove_tags=True,
 
 
 def mask_validation(mask, value):
-    allowed_symbols_in_mask = {'d': '\d', 'w': '\w', '-': '\-'}
+    allowed_symbols_in_mask = {'d': '\d', 'w': '[a-z\u0400-\u04FF]', '-': '\-'}
     re_mask = '('
     try:
         for letter in mask:

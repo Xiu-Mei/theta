@@ -40,23 +40,26 @@
                 aria-expanded="false" aria-label="Toggle navigation">
           <span class="navbar-toggler-icon"></span>
         </button>
-        <a class="navbar-brand" href="{% url 'home' %}">Theta</a>
+        <a class="navbar-brand" href="{% url 'main_admin' %}">Theta</a>
 
         <div class="collapse navbar-collapse" id="navbarSupportedContent">
           <ul class="navbar-nav mr-auto">
-            <li class="nav-item{% if menu == 'dashboard' %} active{% endif %}">
-              <a class="nav-link" href="{% url 'home' %}">Dashboard <span class="sr-only">(current)</span></a>
-            </li>
-            <li class="nav-item dropdown{% if menu == 'printers' %} active{% endif %}">
-              <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownPrinters" data-toggle="dropdown"
-                 aria-haspopup="true" aria-expanded="false">
-                Printers
-              </a>
-              <div class="dropdown-menu" aria-labelledby="navbarDropdownPrinters">
-                <a class="dropdown-item" href="{% url 'printers' %}">Printers</a>
-                <a class="dropdown-item" href="#">Cartridges</a>
-                <a class="dropdown-item" href="#">Printer Spares</a>
-              </div>
+{#            <li class="nav-item{% if menu == 'dashboard' %} active{% endif %}">#}
+{#              <a class="nav-link" href="{% url 'home' %}">Dashboard <span class="sr-only">(current)</span></a>#}
+{#            </li>#}
+{#            <li class="nav-item dropdown{% if menu == 'printers' %} active{% endif %}">#}
+{#              <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownPrinters" data-toggle="dropdown"#}
+{#                 aria-haspopup="true" aria-expanded="false">#}
+{#                Printers#}
+{#              </a>#}
+{#              <div class="dropdown-menu" aria-labelledby="navbarDropdownPrinters">#}
+{#                <a class="dropdown-item" href="{% url 'printers' %}">Printers</a>#}
+{#                <a class="dropdown-item" href="#">Cartridges</a>#}
+{#                <a class="dropdown-item" href="#">Printer Spares</a>#}
+{#              </div>#}
+{#            </li>#}
+            <li class="nav-item{% if menu == 'printers' %} active{% endif %}">
+              <a class="nav-link" href="{% url 'printers' %}">Printers</a>
             </li>
             <li class="nav-item{% if menu == 'location' %} active{% endif %}">
               <a class="nav-link" href="{% url 'location' %}">Location</a>

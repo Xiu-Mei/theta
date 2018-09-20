@@ -57,7 +57,7 @@ class PrintersListView(OfficeAdminValidationMixin, TemplateView):
         self.context['variety'] = self.get_params['variety'] if self.get_params['variety'] else ''
         self.context['manufacturer'] = self.get_params['manufacturer'] if self.get_params['manufacturer'] else ''
 
-        self.context['paginator'] = Paginator(self.context['list_of_printers'], PrintersListView.number_per_page)
+        self.context['paginator'] = Paginator(self.params['list_of_printers'], PrintersListView.number_per_page)
         self.context['printers'] = self.context['paginator'].get_page(self.context['page'])
         self.context['menu'] = 'printers'
 
@@ -66,9 +66,9 @@ class PrintersListView(OfficeAdminValidationMixin, TemplateView):
         filters['name__icontains'] = self.get_params['variety']
         filters['manufacturer__name__icontains'] = self.get_params['manufacturer']
         filters = {k: v for k, v in filters.items() if v is not None}
-        self.context['list_of_printers'] = Printer.objects.filter(**filters)
+        self.params['list_of_printers'] = Printer.objects.filter(**filters)
         self.context['manufacturers'] = [manufacturer.name for manufacturer in Manufacturer.objects.all()
-                                         if self.context['list_of_printers'].filter(manufacturer=manufacturer).exists()]
+                                         if self.params['list_of_printers'].filter(manufacturer=manufacturer).exists()]
 
 
 class PrinterView(OfficeAdminValidationMixin, TemplateView):
@@ -212,7 +212,7 @@ class PrinterView(OfficeAdminValidationMixin, TemplateView):
         return validation(self.post_params, validation_params)
 
     def fetch_add_printer_params(self):
-        get_printer_masks = InventoryNumberPrefix.objects.filter(devices__in=[1, ])
+        get_printer_masks = InventoryNumberPrefix.objects.filter(for_item='Printers')
         self.params['prefix'] = None
         for mask in get_printer_masks:
             if str(mask) == self.post_params['mask']:
@@ -240,7 +240,7 @@ class PrinterView(OfficeAdminValidationMixin, TemplateView):
                 office=self.office,
                 prefix=self.params['prefix'],
                 inventory_number=self.params['inv_number'],
-            )
+             )
             self.context['error'] = 'Printer with this inventory number already exist.'
             return False
         except PrinterItem.DoesNotExist:
@@ -260,18 +260,17 @@ class PrinterView(OfficeAdminValidationMixin, TemplateView):
         return True
 
     def collect_prefixes(self):
-        latest_printer_item = PrinterItem.objects.filter(office=self.office,
-                                                         printer=self.params['printer_id'],
-                                                         ).order_by('-id')
-        all_prefixes = InventoryNumberPrefix.objects.filter(devices__in=[1, ])
-        result = [str(prefix) for prefix in all_prefixes]
-        if latest_printer_item:
-            latest_printer_item = latest_printer_item[0]
-            try:
-                result.insert(0, result.pop(result.index(str(latest_printer_item.prefix))))
-            except ValueError:
-                return result
-        return result
+        try:
+            latest_printer_item = PrinterItem.objects.filter(office=self.office,
+                                                             printer=self.params['printer_id'],
+                                                             ).order_by('-id')
+            return [latest_printer_item[0].prefix] + [str(prefix) for prefix in
+                                                      InventoryNumberPrefix.objects.filter(
+                                                              for_item='Printers').exclude(
+                                                              id=latest_printer_item[0].prefix.id)]
+
+        except ObjectDoesNotExist:
+            return [str(prefix) for prefix in InventoryNumberPrefix.objects.filter(for_item='Printers')]
 
     def fetch_add_spare_params(self):
         try:
@@ -401,7 +400,6 @@ class PrinterItemView(OfficeAdminValidationMixin, TemplateView):
             return redirect('account_login')
 
         self.params['printer_item_id'] = (self.kwargs['printer_item_id']).lstrip('0')
-        print(self.params['printer_item_id'])
         if not self.get_context_data():
             return redirect('printers')
         return self.render_to_response(self.context)

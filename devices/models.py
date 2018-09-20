@@ -39,12 +39,13 @@ class Url(models.Model):
 
 
 class InventoryNumberPrefix(models.Model):
-    devices = models.ManyToManyField(Device)
+    # devices = models.ManyToManyField(Device)
+    for_item = models.CharField(max_length=512, blank=True, null=True)
     prefix = models.CharField(max_length=512, blank=True, null=True)
     inventory_number_mask = models.CharField(max_length=128, default='ddd')  # wwdddd = ab0001, ab0002
 
-    def get_devices(self):
-        return "\n".join([d.device_name for d in self.devices.all()])
+    # def get_devices(self):
+    #     return "\n".join([d.device_name for d in self.devices.all()])
 
     def __str__(self):
         return '{}{}'.format(self.prefix, self.inventory_number_mask)
